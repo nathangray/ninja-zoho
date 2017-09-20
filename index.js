@@ -8,9 +8,7 @@ var credentials = require( path.resolve( __dirname, "./credentials.js" ) );
 var ninja = require(path.resolve( __dirname, './ninja'))(credentials.NinjaAPI);
 var zoho = require(path.resolve( __dirname, './zoho'))(credentials.ZohoAPI);
 
-
 // Get alerts
-
 ninja.getAlerts().then(function(alerts) {
 	if(!alerts || !alerts.length)
 	{
@@ -25,9 +23,9 @@ ninja.getAlerts().then(function(alerts) {
 		}
 		catch (e)
 		{
-			console.log("While processing an alert for " + alerts.customer.name +':');
-			console.log(e.message)
-			console.log("Alert:", alerts[i])
+			console.error("While processing an alert for " + alerts[i].customer.name +':');
+			console.error(e.message)
+			console.error("Alert:", alerts[i])
 		}
 	}
 });

@@ -278,7 +278,7 @@ var exports = module.exports = function (ZohoAPI) {
 			.then(function(contact) {
 				var ticket = createTicket(alert, contact);
 				console.log(ticket);
-				postTicket(ticket);
+			//	postTicket(ticket);
 			})
 			.catch(function(reason) {
 				throw new Error(reason);

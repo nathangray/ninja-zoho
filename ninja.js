@@ -19,7 +19,7 @@ var exports = module.exports = function (NinjaAPI) {
 		return new Promise(function(resolve, reject) {
 			request(ninjaConnection.generateOptions(ninjaReq), function(err, response, data) {
 				if(err) return reject(err);
-				resolve(data);
+				resolve(JSON.parse(data));
 			})
 		});
 	}
