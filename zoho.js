@@ -234,7 +234,7 @@ var exports = module.exports = function (ZohoAPI) {
 	{
 		return {
 			subject: alert.message,
-			description: JSON.stringify(alert),
+			description: JSON.stringify(alert, null, "\t"),
 			departmentId: department.id,
 			contactId: contact.id
 
@@ -277,7 +277,7 @@ var exports = module.exports = function (ZohoAPI) {
 
 			.then(function(contact) {
 				var ticket = createTicket(alert, contact);
-				console.log(ticket);
+				console.log('Creating a ticket', alert, ticket);
 			//	postTicket(ticket);
 			})
 			.catch(function(reason) {
