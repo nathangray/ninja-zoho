@@ -283,12 +283,12 @@ var exports = module.exports = function (ZohoAPI) {
 
 			if(field == 'system_name' && object.id)
 			{
-				ticket.description += capitalizeFirstLetter(field) + ': ' +
-						'<a href="https://app.ninjarmm.com/#/deviceDashboard/' + object.id + '/overview">' + object.system_name + '</a>'
+				ticket.description += capitalizeFirstLetter(field).replace('_', ' ') + ': ' +
+						'<a href="https://app.ninjarmm.com/#/deviceDashboard/' + object.id + '/overview" target="_blank">' + object.system_name + '</a><br />'
 			}
 			else
 			{
-				ticket.description += capitalizeFirstLetter(field) + ': ' + object[field] + '<br />';
+				ticket.description += capitalizeFirstLetter(field).replace('_', ' ') + ': ' + object[field] + '<br />';
 			}
 		}
 
