@@ -1,7 +1,8 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Dealing with Zoho
+ *
+ * See the API:
+ * https://desk.zoho.com/DeskAPIDocument#Introduction
  */
 
 var exports = module.exports = function (ZohoAPI) {
@@ -10,7 +11,7 @@ var exports = module.exports = function (ZohoAPI) {
 	var request = require('request');
 	var orgID = null;
 	var departments = [];
-	var department = null;
+	var department = {id: ZohoAPI.departmentID};
 	var account = ZohoAPI.accountID;
 	var contacts = [];
 	var contact = null;
@@ -83,6 +84,22 @@ var exports = module.exports = function (ZohoAPI) {
 		return p;
 	}
 
+	/**
+	 * Get a department to use
+	 *
+	 * @returns {String}
+	 */
+	function getDepartment() {
+		if(department) {
+			return Promise.resolve(department);
+		}
+		var p = new Promise(function(resolve, reject) {
+			getDepartments().then(function(resolve, reject) {
+				resolve(departments[0] || null);
+			})
+		});
+		return p;
+	}
 	/**
 	 * Get all the departments from Zoho
 	 */
@@ -232,15 +249,55 @@ var exports = module.exports = function (ZohoAPI) {
 	 */
 	function createTicket(alert, contact)
 	{
-		return {
+		var ticket_fields = [
+			'type',
+			'status',
+			'message',
+			'timestamp',
+			'device.role',
+			'device.system_name',
+			'device.display_name'
+		];
+		var ticket = {
 			subject: alert.message,
-			description: JSON.stringify(alert, null, "\t"),
+			description: 'Ninja Notification<br />',
 			departmentId: department.id,
 			contactId: contact.id
-
 		};
+
+
+		for(var i = 0; i < ticket_fields.length; i++)
+		{
+			var field = ticket_fields[i];
+			var object = alert;
+			if(field.indexOf('.') > 0)
+			{
+				var split = field.split('.',2);
+				object = object[split[0]];
+				field = split[1];
+			}
+			add_field(object, field);
+		}
+		function add_field(object, field)
+		{
+
+			if(field == 'system_name' && object.id)
+			{
+				ticket.description += capitalizeFirstLetter(field) + ': ' +
+						'<a href="https://app.ninjarmm.com/#/deviceDashboard/' + object.id + '/overview">' + object.system_name + '</a>'
+			}
+			else
+			{
+				ticket.description += capitalizeFirstLetter(field) + ': ' + object[field] + '<br />';
+			}
+		}
+
+		return ticket;
 	}
 
+	function capitalizeFirstLetter(string) {
+		return string.charAt(0).toUpperCase() + string.slice(1);
+	}
 	function postTicket(ticket)
 	{
 		console.log("Posting ", ticket);
@@ -271,14 +328,14 @@ var exports = module.exports = function (ZohoAPI) {
 	 */
 	module.addTicket = function addTicket(alert) {
 		console.log('addTicket()');
-		getDepartments()
+		return getDepartment()
 			.then(getAccount.bind(null, alert.customer.name))
 			.then(getContact)
 
 			.then(function(contact) {
 				var ticket = createTicket(alert, contact);
 				console.log('Creating a ticket', alert, ticket);
-			//	postTicket(ticket);
+				postTicket(ticket);
 			})
 			.catch(function(reason) {
 				throw new Error(reason);
