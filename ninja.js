@@ -20,11 +20,13 @@ var exports = module.exports = function (NinjaAPI, DEBUG) {
 		{
 			ninjaReq.resource += '/since/' + since;
 		}
-		if(DEBUG) console.log(ninjaReq);
 
 		return new Promise(function(resolve, reject) {
+			if(DEBUG) console.log('GET: ' , ninjaConnection.generateOptions(ninjaReq));
 			request(ninjaConnection.generateOptions(ninjaReq), function(err, response, data) {
-				console.log("Got alert response: ",data);
+				if(DEBUG) console.log('error:', err); // Print the error if one occurred
+				if(DEBUG) console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+				if(DEBUG) console.log("Got alert response: ",data);
 				if(err) return reject(err);
 				resolve(JSON.parse(data));
 			})
