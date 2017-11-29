@@ -10,6 +10,7 @@ var ninja = require(path.resolve( __dirname, './ninja'))(credentials.NinjaAPI);
 var zoho = require(path.resolve( __dirname, './zoho'))(credentials.ZohoAPI);
 
 //zoho.addTicket({message: 'Testing', customer:{name:'Oasis Dental'}});
+var DEBUG = 1;
 var last_alert_id = 0;
 
 try {
@@ -30,7 +31,7 @@ catch (e) {}
  *
  */
 function process(alerts, i) {
-	console.log("Alerts: ", alerts);
+	if(DEBUG) console.log("Alerts: ", alerts);
 	if(!alerts || !alerts.length)
 	{
 		return;
@@ -62,6 +63,7 @@ function process(alerts, i) {
 	}
 }
 
+if(DEBUG) console.log("Hi, I'm working.  \n Fetching alerts...");
 
 // Get alerts
 ninja.getAlerts(last_alert_id).then(function(alerts) {
