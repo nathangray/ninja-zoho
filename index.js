@@ -69,8 +69,8 @@ if(DEBUG) console.log("Hi, I'm working.  \n Fetching alerts...");
 // Get alerts
 ninja.getAlerts(last_alert_id).then(function(alerts) {
 	process(alerts, 0);
-}, function() {
-	console.error("Unable to get alerts");
+}, function(reason) {
+	console.error("Unable to get alerts.",reason);
 });
 
 
