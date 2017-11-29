@@ -3,14 +3,15 @@
 */
 "use strict";
 
+var DEBUG = 1;
+
 var path = require('path');
 var fs = require('fs');
 var credentials = require( path.resolve( __dirname, "./credentials.js" ) );
-var ninja = require(path.resolve( __dirname, './ninja'))(credentials.NinjaAPI);
+var ninja = require(path.resolve( __dirname, './ninja'))(credentials.NinjaAPI, DEBUG);
 var zoho = require(path.resolve( __dirname, './zoho'))(credentials.ZohoAPI);
 
 //zoho.addTicket({message: 'Testing', customer:{name:'Oasis Dental'}});
-var DEBUG = 1;
 var last_alert_id = 0;
 
 try {
