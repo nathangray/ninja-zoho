@@ -30,6 +30,7 @@ catch (e) {}
  *
  */
 function process(alerts, i) {
+	console.log("Alerts: ", alerts);
 	if(!alerts || !alerts.length)
 	{
 		return;
