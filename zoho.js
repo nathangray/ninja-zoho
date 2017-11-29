@@ -5,7 +5,7 @@
  * https://desk.zoho.com/DeskAPIDocument#Introduction
  */
 
-var exports = module.exports = function (ZohoAPI) {
+var exports = module.exports = function (ZohoAPI, DEBUG) {
 	var module = {};
 
 	var request = require('request');
@@ -37,7 +37,7 @@ var exports = module.exports = function (ZohoAPI) {
 				}
 				var data = JSON.parse(data);
 				orgID = data.data[0].id;
-				console.log("Org ID: " + orgID);
+				if(DEBUG) console.log("Org ID: " + orgID);
 				resolve(orgID);
 			});
 		});
@@ -58,6 +58,10 @@ var exports = module.exports = function (ZohoAPI) {
 				var options = {
 					method: 'GET',
 					url: ZohoAPI.host + '/accounts',
+					qs: {
+						limit: 25,
+						sortBy: 'accountName'
+					},
 					headers: {
 						'Authorization': 'Zoho-authtoken ' + ZohoAPI.Authorization,
 						'orgId': orgID
@@ -68,6 +72,7 @@ var exports = module.exports = function (ZohoAPI) {
 						reject(err);
 					}
 					var data = JSON.parse(data);
+					if(DEBUG) console.log("Accounts:", data);
 					if(!data.data || !data.data.length)
 					{
 						throw new Error('Could not get account list');
@@ -203,18 +208,91 @@ var exports = module.exports = function (ZohoAPI) {
 	 */
 	function getAccount(customer_name) {
 		return new Promise(function(resolve, reject) {
-			getAccounts().then(function(map) {
-				if(map[customer_name])
+			getOrganisation().then(getDepartment).then(function(dept) {
+				var query = {
+					searchStr: customer_name,
+					module: 'accounts',
+					departmentId: dept.id,
+				};
+				return search(query);
+			}).then(function (data) {
+				if(!data)
 				{
-				//	console.log("Selected account: ", map[customer_name]);
-					resolve(map[customer_name]);
+					reject('Unable to find Zoho account for "' + customer_name + '" - no matches');
+					return;
 				}
-				else
+
+				if(data['count'] == 0)
 				{
-					reject("Unable to find Zoho account for '" + customer_name + "'");
+					reject('Unable to find Zoho account for "' + customer_name + '" - no results');
 				}
+				if(DEBUG) console.log("Account search results: ", data);
+
+				for(var i = 0; i < data.length; i++)
+				{
+					if(data[i].accountName === customer_name)
+					{
+						resolve(data[i]);
+						return;
+					}
+				}
+				reject('Unable to find Zoho account for "' + customer_name + '", search results did not match');
+			}).catch(function(e) {
+				reject('While finding Zoho account for "' + customer_name +'":' +e.message);
 			});
-		})
+		});
+	}
+
+	/**
+	 * Use the Zoho search
+	 * @param {Array} query
+	 * @returns {array}
+	 */
+	function search(query)
+	{
+		return new Promise(function(resolve, reject) {
+			getOrganisation().then(getDepartment).then(function(dept) {
+				var options = {
+					method: 'GET',
+					url: ZohoAPI.host + '/search',
+					qs: query,
+					headers: {
+						'Authorization': 'Zoho-authtoken ' + ZohoAPI.Authorization,
+						'orgId': orgID
+					}
+				};
+
+				if(DEBUG) console.log("Searching for ", query);
+
+				var results = [];
+				request(options, function(err, response, data) {
+					if(err) {
+						reject(err);
+					}
+					if(DEBUG) console.log(data);
+					if(!data)
+					{
+						data = array();
+					}
+					else
+					{
+						var data = JSON.parse(data);
+						if(data['message'])
+						{
+							reject(data['message']);
+							return;
+						}
+						data = data.data ? data.data : data;
+					}
+					for(var i = 0; i < data.length; i++)
+					{
+						if(DEBUG) console.log(i, data[i]);
+						results.push(data[i]);
+					}
+					resolve(results);
+				});
+			});
+		});
 	}
 
 	/**
@@ -227,11 +305,11 @@ var exports = module.exports = function (ZohoAPI) {
 	function getContact(account)
 	{
 		return new Promise(function(resolve, reject) {
-			getContacts().then(function(contacts) {
-				if(contacts[account.id])
+			search({module: 'contacts', searchStr: account.accountName}).then(function(contacts) {
+				if(contacts.length >= 1)
 				{
-				//	console.log("Selected contact: ",contacts[account.id]);
-					resolve(contacts[account.id][0]);
+					if(DEBUG) console.log("Selected contact 0: ",contacts[0]);
+					resolve(contacts[0]);
 				}
 				else
 				{
@@ -300,7 +378,7 @@ var exports = module.exports = function (ZohoAPI) {
 	}
 	function postTicket(ticket)
 	{
-		console.log("Posting ", ticket);
+		if(DEBUG) console.log("Posting ", ticket);
 		var options = {
 			method: 'POST',
 			url: ZohoAPI.host + '/tickets',
@@ -312,7 +390,7 @@ var exports = module.exports = function (ZohoAPI) {
 		};
 		var p = new Promise(function(resolve, reject)  {
 			request(options, function(err, response, data) {
-				console.log(data);
+				if(DEBUG) console.log(data);
 				if(err) {
 					reject(err);
 				}
@@ -327,14 +405,13 @@ var exports = module.exports = function (ZohoAPI) {
 	 * Add a new ticket to zoho based on the given Ninja alert
 	 */
 	module.addTicket = function addTicket(alert) {
-		console.log('addTicket()');
 		return getDepartment()
 			.then(getAccount.bind(null, alert.customer.name))
 			.then(getContact)
 
 			.then(function(contact) {
 				var ticket = createTicket(alert, contact);
-				console.log('Creating a ticket', alert, ticket);
+				if(DEBUG) console.log('Creating a ticket', alert, ticket);
 				postTicket(ticket);
 			})
 			.catch(function(reason) {

@@ -3,13 +3,13 @@
 */
 "use strict";
 
-var DEBUG = 1;
+var DEBUG = false;
 
 var path = require('path');
 var fs = require('fs');
 var credentials = require( path.resolve( __dirname, "./credentials.js" ) );
 var ninja = require(path.resolve( __dirname, './ninja'))(credentials.NinjaAPI, DEBUG);
-var zoho = require(path.resolve( __dirname, './zoho'))(credentials.ZohoAPI);
+var zoho = require(path.resolve( __dirname, './zoho'))(credentials.ZohoAPI, DEBUG);
 
 //zoho.addTicket({message: 'Testing', customer:{name:'Oasis Dental'}});
 var last_alert_id = 0;
@@ -54,6 +54,8 @@ function process(alerts, i) {
 			{
 				return process(alerts, i+1);
 			}
+		}).catch(function(e) {
+			throw e;
 		});
 	}
 	catch (e)
@@ -61,10 +63,10 @@ function process(alerts, i) {
 		console.error("While processing an alert for " + alerts[i].customer.name +':');
 		console.error(e.message)
 		console.error("Alert:", alerts[i])
+
+		return process(alerts, i+1);
 	}
 }
-
-if(DEBUG) console.log("Hi, I'm working.  \n Fetching alerts...");
 
 // Get alerts
 ninja.getAlerts(last_alert_id).then(function(alerts) {
